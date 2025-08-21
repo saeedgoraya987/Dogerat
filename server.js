@@ -709,13 +709,29 @@ appBot.on("callback_query", (callbackQuery) => {
         currentUuid = uuid
     }
 });
-setInterval(function () {
-    appSocket.clients.forEach(function each(ws) {
-        ws.send('ping')
-    });
-    try {
-        axios.get(address).then(r => "")
-    } catch (e) {
+const PORT = process.env.PORT || 8999;
+
+setInterval(() => {
+  // Safe WebSocket ping
+  appSocket.clients.forEach(ws => {
+    if (ws.readyState === ws.OPEN) {
+      ws.send('ping');
     }
-}, 5000)
-appServer.listen(8999);
+  });
+
+  // Axios error handling
+  axios.get(address)
+    .catch(err => {
+      console.error('Ping failed:', err.message);
+    });
+
+}, 5000);
+
+// Proper server start
+appServer.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+// Global error guards
+process.on('uncaughtException', err => console.error('Uncaught:', err));
+process.on('unhandledRejection', err => console.error('Unhandled:', err));
